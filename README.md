@@ -1,10 +1,10 @@
 Introduction
 ============
 
-[![Build Status](https://secure.travis-ci.org/noodlefrenzy/node-sbus.png?branch=master)](https://travis-ci.org/noodlefrenzy/node-sbus)
-[![Dependency Status](https://david-dm.org/noodlefrenzy/node-sbus.png)](https://david-dm.org/noodlefrenzy/node-sbus)
+[![Build Status](https://secure.travis-ci.org/jmspring/node-sbus.png?branch=master)](https://travis-ci.org/jmspring/node-sbus)
+[![Dependency Status](https://david-dm.org/jmspring/node-sbus.png)](https://david-dm.org/jmspring/node-sbus)
 
-`node-sbus` is library for connecting to Azure Service Bus services via AMQP.
+`sbus` is a library for connecting to Azure Service Bus services via AMQP.
 
 Currently, only Event Hub is supported and can be accessed by one of two methods:
 
@@ -15,10 +15,51 @@ The library operates by taking an AMQP provider and wrapping it in higher-level 
 to make it easy to run against Azure EventHub.  It can store state into Azure Table Storage as well, providing the seamless
 ability to continue receiving messages from where you left off - akin to the .NET EventProcessorHost.
 
-AMQP Provider Requirements
-===========================
+Usage
+=====
 
-`node-sbus` relies on five simple methods to provide AMQP support - two for service bus, two for event hub, one for teardown:
+To use this library, you need to provide it with an AMQP provider implementation (see below), and you can then access it as follows:
+
+To receive messages from all partitions of `myEventHub` in `myServiceBus`, and store state in `myTableStore`, with an AMQP Provider `AMQPProviderImpl`:
+
+    // Set up variables
+    var serviceBus = 'myServiceBus',
+        eventHubName = 'myEventHub',
+        sasKeyName = ..., // A SAS Key Name for the Event Hub, with Receive privilege
+        sasKey = ..., // The key value
+        tableStorageName = 'myTableStore',
+        tableStorageKey = ..., // The key for the above table store
+        consumerGroup = '$Default';
+
+    var Sbus = require('sbus');
+    var hub = Sbus.eventhub.EventHub.Instance(serviceBus, eventHubName, sasKeyName, sasKey, AMQPProviderImpl);
+    hub.getEventProcessor(consumerGroup, function (conn_err, processor) {
+      if (conn_err) { ... do something ... } else {
+        processor.set_storage(tableStorageName, tableStorageKey);
+        processor.init(function (rx_err, partition, payload) {
+          if (rx_err) { ... do something ... } else {
+            // Process the JSON payload
+          }
+        }, function (init_err) {
+          if (init_err) { ... do something ... } else {
+            processor.receive();
+          }
+        });
+      }
+    });
+
+For sending messages, it's even easier:
+
+    // Set up variables as above
+
+    var Sbus = require('sbus');
+    var hub = Sbus.eventhub.EventHub.Instance(serviceBus, eventHubName, sasKeyName, sasKey, AMQPProviderImpl);
+    hub.send({ 'myJSON': 'payload' }, 'partitionKey', function(tx_err) { });
+
+AMQP Provider Requirements
+==========================
+
+`sbus` relies on five simple methods to provide AMQP support - two for service bus, two for event hub, one for teardown:
 
 * `send(uri, payload, cb)`
   * The URI should be the full AMQPS address you want to deliver to with included SAS name and key,
