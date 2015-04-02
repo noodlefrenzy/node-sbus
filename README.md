@@ -3,6 +3,7 @@ Introduction
 
 [![Build Status](https://secure.travis-ci.org/jmspring/node-sbus.png?branch=master)](https://travis-ci.org/jmspring/node-sbus)
 [![Dependency Status](https://david-dm.org/jmspring/node-sbus.png)](https://david-dm.org/jmspring/node-sbus)
+[![npm version](https://badge.fury.io/js/sbus.svg)](http://badge.fury.io/js/sbus)
 
 `sbus` is a library for connecting to Azure Service Bus services via AMQP.
 
